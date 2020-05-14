@@ -22,7 +22,7 @@ function love.load()
     enterFont = love.graphics.newFont('tabarra.ttf',10)
     scoreFont = love.graphics.newFont('B20Sans.ttf',18)
     player1score = 0
-    player2score = 3
+    player2score = 0
     
     -- paddle positions
     paddle1 = Paddle(5,20,5,20)
@@ -57,6 +57,26 @@ function love.load()
 end
 
 function love.update(dt)
+    if ball:collides(paddle1) then
+        ball.dx = -ball.dx
+    end
+
+    if ball:collides(paddle2) then
+        ball.dx = -ball.dx
+
+    end
+-- deals with ball hitting top of window
+    if ball.y <= 0 then
+        ball.dy = -ball.dy
+        ball.y = 0
+    end
+    if ball.y >= VIRTUAL_HEIGHT - 4 then
+        ball.dy = -ball.dy
+        ball.y = VIRTUAL_HEIGHT - 4
+    end
+
+
+
     paddle1:update(dt)
     paddle2:update(dt)
 
@@ -81,39 +101,73 @@ function love.update(dt)
     end
 
     if gameState == 'play' then
+        if ball.x <= 0 then 
+            player2score = player2score + 1 
+            gameStart()
+            gameState = 'start'
+        end
+
+        if ball.x >= VIRTUAL_WIDTH - 4 then
+            player1score = player1score + 1
+            gameStart()
+            gameState = 'start'
+        end
+
         ball:update(dt)
         -- *ballx = ballx + balldx * dt
         -- *bally = bally + balldy * dt
+    end
+
+    if player1score == 2 or player2score == 2 then
+        gameState = 'victory'
+        player1score = 0
+        player2score = 0
+        gameStart()
     end
 
 
 end
 
 function gameStart()
-    ball.x = VIRTUAL_WIDTH/2-2
-    ball.y = VIRTUAL_HEIGHT/2-2
-    -- like a ternary
-    ball.dx = math.random(2) == 1 and -100 or 100
-    ball.dy = math.random(-50,50) 
+    if player1score == player2score then
+        ball.x = VIRTUAL_WIDTH/2-2
+        ball.y = VIRTUAL_HEIGHT/2-2
+        -- like a ternary
+        ball.dx = math.random(2) == 1 and -100 or 100
+        ball.dy = math.random(-50,50) 
+    elseif player1score > player2score then
+        ball.dx = -100
+    elseif player2score > player1score then
+        ball.dx = 100
+    
+    
+
 end
-
-
+end
 
 function love.keypressed(key)
     --  if x is pressed quits the game
     if key == 'x' then
         love.event.quit()
     elseif key == 'enter' or key == 'return' then
-        if gameState == 'start' then 
+        if gameState == 'start' or 'win'then 
             gameState = 'play' 
         elseif gameState == 'play' then gameState = 'start'
             gameStart()
         
+       
         end
     end
 end
 
 
+-- function victory() 
+--     if player1score == 3 or player2score == 3 then
+--     gameState = 'victory'
+--     player1score = 0
+--     player2score = 0
+-- end
+-- end
 
 
 function love.draw()
@@ -143,7 +197,16 @@ paddle2:render()
     elseif gameState == 'play' then
         love.graphics.setFont(helloFont)
         love.graphics.printf("PLAY",0,20, VIRTUAL_WIDTH,'center')
-    end
+
+    elseif gameState == 'victory' then
+        -- victory()
+        love.graphics.printf("WIN",0,20, VIRTUAL_WIDTH,'center')
+    love.graphics.setFont(enterFont)
+
+        love.graphics.printf("Press Enter for New Game",0,ball.y, VIRTUAL_WIDTH,'center')
+
+    
+end
 
 
 
@@ -154,6 +217,15 @@ paddle2:render()
     love.graphics.print('P2',VIRTUAL_WIDTH/2+30,VIRTUAL_HEIGHT/4)
     love.graphics.print(player2score, VIRTUAL_WIDTH/2 + 30,VIRTUAL_HEIGHT/3)
 
+    displayFPS()
+
     push:apply('end')
 
+end
+
+function displayFPS()
+    love.graphics.setColor(0,2,3,2)
+    love.graphics.setFont(scoreFont)
+    love.graphics.print("FPS" .. tostring(love.timer.getFPS()),40,20)
+    love.graphics.setColor(1,1,1,1)
 end
